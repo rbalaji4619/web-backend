@@ -10,7 +10,7 @@ exports.createContact = async (req, res) => {
       return res.status(400).json({ error: "All required fields must be filled" });
     }
 
-    // 1️⃣ Save to DB
+    // 1️⃣ Save contact in DB
     const contact = await Contact.create({
       name,
       email,
@@ -19,18 +19,20 @@ exports.createContact = async (req, res) => {
       description,
     });
 
-    // 2️⃣ Setup transporter
+    // 2️⃣ Configure SMTP transporter (Gmail example)
     const transporter = nodemailer.createTransport({
-      service: "gmail",
+      host: "smtp.gmail.com",
+      port: 465,
+      secure: true, // true for port 465, false for 587
       auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
+        user: process.env.EMAIL_USER, // your Gmail address
+        pass: process.env.EMAIL_PASS, // app password (not Gmail login password)
       },
     });
 
     // 3️⃣ Send mail with contact details
     await transporter.sendMail({
-      from: process.env.EMAIL_USER,
+      from: `"${name}" <${process.env.EMAIL_USER}>`,
       to: "burjtechconsultancy@gmail.com",
       subject: `📩 New Contact Form Submission from ${name}`,
       html: `
@@ -45,7 +47,7 @@ exports.createContact = async (req, res) => {
 
     res.status(200).json({ message: "✅ Contact saved & email sent", contact });
   } catch (error) {
-    console.error("❌ Error saving contact:", error);
-    res.status(500).json({ error: "Failed to save contact" });
+    console.error("❌ Error saving contact or sending email:", error);
+    res.status(500).json({ error: "Failed to save contact or send email" });
   }
 };
